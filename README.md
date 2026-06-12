@@ -74,9 +74,28 @@ trigger should be "above my depth," not "every message."
 
 ## Deploy to Hermes
 
-1. Copy `bff.py` and `hermes_tool_bff.py` to the Hermes host's
-   `hermes-agent/tools/` directory.
-2. Align the registration wrapper in `hermes_tool_bff.py` with an existing
-   tool (e.g. `session_search_tool.py`); the consult logic needs no changes.
-3. Register `ask_claude` in Hermes's config and let the local model's tool
-   description do the routing.
+Verified live on a real Hermes install (macOS, launchd-managed gateway).
+
+1. Copy `bff.py` and `hermes_tool_bff.py` (deploy it as `bff_tool.py`) into
+   the host's `hermes-agent/tools/`. `bff.py` is the library (no top-level
+   `registry.register`, so the tool discovery ignores it); `bff_tool.py`
+   self-registers `ask_claude` under toolset `bff`.
+2. Enable the toolset: add `bff` to the relevant surfaces under
+   `platform_toolsets` in `config.yaml` (e.g. `cli`, `api_server`). Do this
+   surgically, alphabetically, and back the file up first.
+3. Restart the gateway (`launchctl kickstart -k gui/$(id -u)/ai.hermes.gateway`).
+   The tool auto-discovers; `ask_claude` then appears on the enabled surfaces.
+
+### Telling the agent it exists
+
+A registered tool the agent never reaches for is dead weight. Add a short
+instruction to the agent's operating doc (Hermes's `AGENTS.md`) pointing at
+`ask_claude`: plain for technical depth, `persona=true` to consult the
+owner's persona about the owner's life, and "when you just do not know, ask
+rather than guess."
+
+**AGENTS.md edits are APPEND-ONLY.** That file is hand-maintained by the
+owner. Never overwrite or replace an existing section. Insert new guidance
+before a stable later heading and diff against a backup to confirm the
+change is insertions only, zero deletions. `echo_append.md` is the snippet
+used on the reference install (appended, not substituted).
