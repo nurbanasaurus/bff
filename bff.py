@@ -27,8 +27,26 @@ class BffError(RuntimeError):
     pass
 
 
+_FALLBACK_BINS = ("~/.local/bin/claude", "/opt/homebrew/bin/claude",
+                  "/usr/local/bin/claude")
+
+
+def claude_bin():
+    """Path to the claude CLI, checking PATH then the usual install spots
+    (daemon processes like Hermes rarely have a login-shell PATH)."""
+    found = shutil.which("claude")
+    if found:
+        return found
+    from pathlib import Path
+    for cand in _FALLBACK_BINS:
+        p = Path(cand).expanduser()
+        if p.is_file():
+            return str(p)
+    return None
+
+
 def claude_available() -> bool:
-    return shutil.which("claude") is not None
+    return claude_bin() is not None
 
 
 def ask(prompt, session_id=None, model=DEFAULT_MODEL, system=None,
@@ -40,9 +58,10 @@ def ask(prompt, session_id=None, model=DEFAULT_MODEL, system=None,
     system prompt. `cwd` sets the directory Claude reads from when the
     question is about a specific project.
     """
-    if not claude_available():
+    binary = claude_bin()
+    if not binary:
         raise BffError("claude CLI not found on PATH; install Claude Code first")
-    cmd = ["claude", "-p", prompt, "--output-format", "json"]
+    cmd = [binary, "-p", prompt, "--output-format", "json"]
     if session_id:
         cmd += ["--resume", session_id]
     if model:
