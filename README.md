@@ -39,6 +39,23 @@ python3 converse.py "How should the backup rotation be structured?" \
   --max-turns 6 --out decision.md
 ```
 
+## Calling the persona
+
+If the machine runs the [aria plugin](https://github.com/nurbanasaurus/aria-plugin),
+the owner has a named persona (Echo, Aria, whoever they grew) whose memory
+is injected into every Claude Code session, headless included. bff can
+consult that persona instead of a bare Claude:
+
+```sh
+python3 bff.py --persona "What's on the owner's plate this week?"
+# answered by the persona, from its real memory of the owner
+```
+
+From Hermes: `ask_claude(question, persona=True)`. The routing rule for the
+local model: persona for questions about the owner's life, plans, and
+preferences; bare consult for technical questions. Both agents work for the
+same person, so the persona shares what it knows.
+
 ## Safety posture
 
 - Consults are read-capable, write-denied. Headless Claude Code can read

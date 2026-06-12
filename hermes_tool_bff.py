@@ -26,7 +26,7 @@ import bff  # noqa: E402
 
 
 def ask_claude(question: str, session_id: str = None,
-               project_dir: str = None) -> dict:
+               project_dir: str = None, persona: bool = False) -> dict:
     """Consult Claude Code on this machine. Returns answer + session_id.
 
     Args:
@@ -36,10 +36,14 @@ def ask_claude(question: str, session_id: str = None,
             that same conversation instead of starting fresh.
         project_dir: optional path; set it when the question is about a
             specific repo so Claude reads the right code.
+        persona: True to consult the owner's persona (Echo, etc., from the
+            aria plugin) with its memory of the owner, instead of a bare
+            Claude. Use for questions about the owner's life, plans, or
+            preferences; use False for technical questions.
     """
     try:
-        text, sid = bff.consult(question, session_id=session_id,
-                                cwd=project_dir)
+        fn = bff.ask_persona if persona else bff.consult
+        text, sid = fn(question, session_id=session_id, cwd=project_dir)
         return {"ok": True, "answer": text, "session_id": sid}
     except bff.BffError as e:
         return {"ok": False, "error": str(e)}
@@ -65,6 +69,7 @@ TOOL_SPEC = {
             "question": {"type": "string"},
             "session_id": {"type": "string"},
             "project_dir": {"type": "string"},
+            "persona": {"type": "boolean"},
         },
         "required": ["question"],
     },
